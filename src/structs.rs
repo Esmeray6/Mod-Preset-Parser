@@ -51,14 +51,15 @@ impl AppDelegate<ModListInfo> for MyDelegate {
                     let inner_html = element.text().next().unwrap();
                     dbg!(&inner_html);
                     let dlc_prefix = self.dlc_prefixes.get(&*inner_html);
-                    if let Some(dlc) = dlc_prefix {
-                        mod_list_lock.push(dlc.to_string());
+                    if let Some(dlc_name) = dlc_prefix {
+                        mod_list_lock.push(dlc_name.to_string());
                     }
                 }
 
                 for element in markup.select(&mods_selector) {
-                    let dlc = format!("@{}", element.text().next().unwrap()).replace("|", "-");
-                    mod_list_lock.push(dlc);
+                    let mut mod_name = format!("@{}", element.text().next().unwrap());
+                    mod_name.retain(|c| c.is_alphanumeric() || c == '@');
+                    mod_list_lock.push(mod_name);
                 }
 
                 mod_list_lock.sort_by(|a,b| {a.to_lowercase().cmp(&b.to_lowercase())});
