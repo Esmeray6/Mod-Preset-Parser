@@ -32,4 +32,4 @@ jobs:
           # (required) GitHub token for uploading assets to GitHub Releases.
           token: ${{ secrets.GITHUB_TOKEN }}
           build-tool: cargo
-          asset: ignored_mods.txt
+          include: ignored_mods.txt
