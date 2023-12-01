@@ -15,6 +15,7 @@ pub struct ModListInfo {
 pub struct MyDelegate {
     pub mod_list: Arc<Mutex<Vec<String>>>,
     pub dlc_prefixes: Arc<HashMap<String, String>>,
+    pub ignored_mods: Arc<Mutex<Vec<String>>>,
 }
 
 impl AppDelegate<ModListInfo> for MyDelegate {
@@ -32,7 +33,7 @@ impl AppDelegate<ModListInfo> for MyDelegate {
             if let Some(path) = path_opt {
                 let document = fs::read_to_string(path.path())
                     .expect("Error when reading the mod preset file");
-                
+
                 let mod_list_lock = &mut *self.mod_list.lock().unwrap();
                 mod_list_lock.clear();
 
@@ -46,7 +47,6 @@ impl AppDelegate<ModListInfo> for MyDelegate {
                 )
                 .expect("No mod list found");
 
-
                 for element in markup.select(&dlc_selector) {
                     let inner_html = element.text().next().unwrap();
                     dbg!(&inner_html);
@@ -56,13 +56,18 @@ impl AppDelegate<ModListInfo> for MyDelegate {
                     }
                 }
 
+                let ignored_mods = dbg!(self.ignored_mods.lock().unwrap());
                 for element in markup.select(&mods_selector) {
                     let mut mod_name = format!("@{}", element.text().next().unwrap());
                     mod_name.retain(|c| c.is_alphanumeric() || c == '@');
-                    mod_list_lock.push(mod_name);
+                    if !ignored_mods.contains(&mod_name) {
+                        mod_list_lock.push(mod_name);
+                    } else {
+                        dbg!(format!("Mod ignored: {}", mod_name));
+                    }
                 }
 
-                mod_list_lock.sort_by(|a,b| {a.to_lowercase().cmp(&b.to_lowercase())});
+                mod_list_lock.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
                 data.mods = mod_list_lock.join(";");
             }
 

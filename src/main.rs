@@ -1,6 +1,11 @@
 #![windows_subsystem = "windows"]
 
-use std::sync::Arc;
+use std::{
+    env,
+    fs::{self, File},
+    io::Read,
+    sync::{Arc, Mutex},
+};
 
 use crate::structs::*;
 use druid::{
@@ -23,7 +28,7 @@ fn main() -> Result<(), PlatformError> {
 }
 
 fn run_druid() -> Result<(), PlatformError> {
-    let window = build_window();
+    let window: (WindowDesc<ModListInfo>, ModListInfo, MyDelegate) = build_window();
     AppLauncher::with_window(window.0)
         .delegate(window.2)
         .launch(window.1)
@@ -41,9 +46,48 @@ fn build_window() -> (WindowDesc<ModListInfo>, ModListInfo, MyDelegate) {
         mods: String::new(),
     };
 
+    let current_exe = env::current_exe().unwrap();
+    let path = current_exe.parent().unwrap();
+    let display = path.display();
+    let mods_path = dbg!(path.join("ignored_mods.txt"));
+    let mut ignored_mods = String::new();
+
+    match fs::metadata(&mods_path) {
+        Ok(metadata) => {
+            if !metadata.is_file() {
+                dbg!("ignored_mods.txt exists, but it's not a file.");
+            } else {
+                let mut file = match File::open(&mods_path) {
+                    Ok(file) => file,
+                    Err(why) => panic!("Couldn't open {}: {}", display, why),
+                };
+
+                match file.read_to_string(&mut ignored_mods) {
+                    Ok(_) => {}
+                    Err(why) => {
+                        panic!("Couldn't read {}: {}", display, why)
+                    }
+                };
+            }
+        }
+        Err(why) => {
+            dbg!(
+                "ignored_mods.txt does not exist or an error has occurred: {}",
+                why
+            );
+        }
+    }
+
+    let ignored_mods = ignored_mods
+        .lines()
+        .filter(|mod_name| !mod_name.is_empty())
+        .map(|mod_name| mod_name.to_string())
+        .collect::<Vec<String>>();
+
     let my_delegate = MyDelegate {
         mod_list: Arc::default(),
         dlc_prefixes: Arc::default(),
+        ignored_mods: Arc::new(Mutex::new(ignored_mods)),
     };
 
     let mod_preset_button = Button::new("Choose the mod preset")
@@ -76,7 +120,7 @@ fn build_window() -> (WindowDesc<ModListInfo>, ModListInfo, MyDelegate) {
     let root_widget = Align::centered(container);
 
     let main_window = WindowDesc::new(root_widget)
-        .title("Arma 3 Command-line Generator")
+        .title("Arma 3 Command Line Generator")
         .window_size(window_size)
         .set_position((
             (monitor_size.width() as f64 - window_size.width) / 2.0,
