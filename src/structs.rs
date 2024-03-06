@@ -58,8 +58,11 @@ impl AppDelegate<ModListInfo> for MyDelegate {
 
                 let ignored_mods = dbg!(self.ignored_mods.lock().unwrap());
                 for element in markup.select(&mods_selector) {
-                    let mut mod_name = format!("@{}", element.text().next().unwrap());
-                    mod_name.retain(|c| c.is_alphanumeric() || c == '@');
+                    let mut mod_name = element.text().next().unwrap().to_string();
+                    mod_name.retain(|c| c.is_alphanumeric());
+                    if !mod_name.starts_with("@") {
+                        mod_name = format!("@{}", mod_name);
+                    }
                     if !ignored_mods.contains(&mod_name) {
                         mod_list_lock.push(mod_name);
                     } else {
