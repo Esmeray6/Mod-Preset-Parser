@@ -10,7 +10,7 @@ use std::{
 use crate::structs::*;
 use druid::{
     commands,
-    widget::{Align, Button, Container, Flex, TextBox},
+    widget::{Align, Button, Checkbox, Container, Flex, TextBox},
     AppLauncher, FileDialogOptions, FileSpec, PlatformError, Screen, Size, WidgetExt, WindowDesc,
 };
 
@@ -44,6 +44,7 @@ fn build_window() -> (WindowDesc<ModListInfo>, ModListInfo, MyDelegate) {
 
     let app_state = ModListInfo {
         mods: String::new(),
+        backticks: false,
     };
 
     let current_exe = env::current_exe().unwrap();
@@ -103,6 +104,10 @@ fn build_window() -> (WindowDesc<ModListInfo>, ModListInfo, MyDelegate) {
         })
         .fix_height(40.0);
 
+    let backticks_toggle = Checkbox::new("Add backticks?")
+        .lens(ModListInfo::backticks)
+        .padding(5.0);
+
     let container = Container::new(
         Flex::column()
             .with_child(
@@ -115,7 +120,9 @@ fn build_window() -> (WindowDesc<ModListInfo>, ModListInfo, MyDelegate) {
                     .lens(ModListInfo::mods),
             )
             .with_spacer(VERTICAL_WIDGET_SPACING)
-            .with_child(mod_preset_button),
+            .with_child(mod_preset_button)
+            .with_spacer(VERTICAL_WIDGET_SPACING)
+            .with_child(backticks_toggle),
     );
     let root_widget = Align::centered(container);
 

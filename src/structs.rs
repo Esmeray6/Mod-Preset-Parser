@@ -9,6 +9,7 @@ use scraper::{Html, Selector};
 #[derive(Clone, Data, Lens, Debug)]
 pub struct ModListInfo {
     pub mods: String,
+    pub backticks: bool
 }
 
 #[derive(Clone, Data, Debug)]
@@ -71,7 +72,11 @@ impl AppDelegate<ModListInfo> for MyDelegate {
                 }
 
                 mod_list_lock.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
-                data.mods = mod_list_lock.join(";");
+                if data.backticks {
+                    data.mods = format!("```\n{}\n```", mod_list_lock.join(";"))
+                } else {
+                    data.mods = mod_list_lock.join(";");
+                }
             }
 
             return Handled::Yes;
