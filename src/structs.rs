@@ -9,7 +9,8 @@ use scraper::{Html, Selector};
 #[derive(Clone, Data, Lens, Debug)]
 pub struct ModListInfo {
     pub mods: String,
-    pub backticks: bool
+    pub backticks: bool,
+    pub missing_mods: String,
 }
 
 #[derive(Clone, Data, Debug)]
@@ -18,6 +19,21 @@ pub struct MyDelegate {
     pub dlc_prefixes: Arc<HashMap<String, String>>,
     pub ignored_mods: Arc<Mutex<Vec<String>>>,
 }
+
+const REQUIRED_MODS: [&str; 12] = [
+    "@ace",
+    "@ArmorModifierACE",
+    "@CBAA3",
+    "@DiwakosPunishunknownweapon",
+    "@EnhancedMovement",
+    "@EnhancedMovementRework",
+    "@MetisMarker",
+    "@ProneLauncher",
+    "@TaskForceArrowheadRadioBETA",
+    "@UnitVoiceOversAETAiO",
+    "@ZeusEnhanced",
+    "@ZeusEnhancedACE3Compatibility",
+];
 
 impl AppDelegate<ModListInfo> for MyDelegate {
     fn command(
@@ -72,6 +88,17 @@ impl AppDelegate<ModListInfo> for MyDelegate {
                 }
 
                 mod_list_lock.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
+
+                let mut missing_mods = vec![];
+                for required_mod in REQUIRED_MODS {
+                    if !mod_list_lock.contains(&required_mod.to_string()) {
+                        missing_mods.push(required_mod);
+                    }
+                }
+                if missing_mods.len() > 0 {
+                    data.missing_mods = format!("Required mods missing: {}", missing_mods.join(", "));
+                }
+
                 if data.backticks {
                     data.mods = format!("```\n{}\n```", mod_list_lock.join(";"))
                 } else {

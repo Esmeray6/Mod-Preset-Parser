@@ -10,8 +10,10 @@ use std::{
 use crate::structs::*;
 use druid::{
     commands,
-    widget::{Align, Button, Checkbox, Container, Flex, TextBox},
-    AppLauncher, FileDialogOptions, FileSpec, PlatformError, Screen, Size, WidgetExt, WindowDesc,
+    text::{FontDescriptor, FontFamily},
+    widget::{Align, Button, Checkbox, Container, Flex, Label, LineBreaking, TextBox},
+    AppLauncher, Color, Env, FileDialogOptions, FileSpec, PlatformError, Screen, Size, WidgetExt,
+    WindowDesc,
 };
 
 mod structs;
@@ -45,6 +47,7 @@ fn build_window() -> (WindowDesc<ModListInfo>, ModListInfo, MyDelegate) {
     let app_state = ModListInfo {
         mods: String::new(),
         backticks: false,
+        missing_mods: String::new(),
     };
 
     let current_exe = env::current_exe().unwrap();
@@ -108,6 +111,12 @@ fn build_window() -> (WindowDesc<ModListInfo>, ModListInfo, MyDelegate) {
         .lens(ModListInfo::backticks)
         .padding(5.0);
 
+    let missing_mods_text = Label::new(|data: &ModListInfo, _env: &Env| data.missing_mods.clone())
+        .with_text_color(Color::rgb(150.0, 0.0, 0.0))
+        .with_font(FontDescriptor::new(FontFamily::SYSTEM_UI).with_size(20.0))
+        .with_line_break_mode(LineBreaking::WordWrap)
+        .padding(5.0);
+
     let container = Container::new(
         Flex::column()
             .with_child(
@@ -115,14 +124,16 @@ fn build_window() -> (WindowDesc<ModListInfo>, ModListInfo, MyDelegate) {
                     .with_placeholder("List of mods")
                     .with_line_wrapping(true)
                     .fix_width(TEXT_BOX_WIDTH)
-                    .fix_height(TEXT_BOX_WIDTH / 2.0)
+                    .fix_height(TEXT_BOX_WIDTH / 3.0)
                     // .padding(0.0)
                     .lens(ModListInfo::mods),
             )
             .with_spacer(VERTICAL_WIDGET_SPACING)
             .with_child(mod_preset_button)
             .with_spacer(VERTICAL_WIDGET_SPACING)
-            .with_child(backticks_toggle),
+            .with_child(backticks_toggle)
+            .with_spacer(VERTICAL_WIDGET_SPACING)
+            .with_child(missing_mods_text),
     );
     let root_widget = Align::centered(container);
 
